@@ -11,9 +11,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.net.SocketTimeoutException;
+import java.util.*;
 
 /**
  * Created by VitaliiZhuk on 02.11.2017.
@@ -21,7 +20,7 @@ import java.util.Scanner;
 public class ParsingService {
 
 
-    //method to parse Name of product
+    //Method to parse Name of product
     public static String parseName(Elements element) throws IOException{
         try {
             String nameAndBrand = element.select("h1[class = productName_192josg]").text();
@@ -34,7 +33,8 @@ public class ParsingService {
             return "error";
         }
     }
-    //method to parse Brand of product
+
+    //Method to parse Brand of product
     public static String parseBrand(Elements element) throws IOException{
         try {
         String nameAndBrand = element.select("h1[class = productName_192josg]").text();
@@ -48,17 +48,20 @@ public class ParsingService {
         }
 
     }
-    //method to parse Price of product
+
+    //Method to parse Price of product
     public static String parsePrice(Elements element){
         String price = element.select("span[class = finalPrice_klth9M]").text();
         return price;
     }
-    //method to parse Description of product
+
+    //Method to parse Description of product
     public static String parseDescription(Elements element){
         String description = element.select("div[class = container_iv4rb4]").text();
         return description;
     }
-    //method to parse Article of product, article is part of Description
+
+    //Method to parse Article of product, article is part of Description
     public static String parseArticle(Elements element) throws IOException{
         try {
             String articleAndDescription = element.select("div[class = container_iv4rb4]").first().text();
@@ -72,10 +75,12 @@ public class ParsingService {
         }
     }
 
+    //Return Document by  input url
     public static Document parcePage(String url) throws IOException {
         Document document = Jsoup.connect("https://www.aboutyou.de"+url).get();
         return document;
     }
+
     // Method that returns number of page with products
     public static int getPagesNumber(Document document) {
         int count = 0;
@@ -87,15 +92,21 @@ public class ParsingService {
         }
         return count;
     }
-    //Method to parse page. Input:
-    // name of file for saving XML,
-    // Url of page that wont to parse,
-    // Document of page that wont to page
+
+    /*
+    * Method to parse page. Input:
+    * name of file for saving XML,
+    * Url of page that wont to parse,
+    * Document of page that wont to page
+    * */
     public static void parsePage(String fileName,String url, Document documentToParse) throws IOException {
+
         //Create list with products
         List<Offer> offerList = new ArrayList<Offer>();
+
         //Create list with  links to product
-        List<String> linkList = new ArrayList<String>();
+        HashSet<String> linkList = new HashSet<String>();
+
         //Create list with links to each product
         for (int i = 1; i <= getPagesNumber(documentToParse); i++) {
             Document document = Jsoup.connect(url + "?page="+i).get();
@@ -105,6 +116,7 @@ public class ParsingService {
                 linkList.add(linkOne);
             }
         }
+
         //Select from list links and do parsing
         for (String s : linkList) {
             Elements elements = parcePage(s).select("div[class = content_1jug6qr]");
@@ -113,47 +125,134 @@ public class ParsingService {
             String brand = parseBrand(elements);
             String description = parseDescription(elements);
             String article = parseArticle(elements);
-            //add product to offerList
             offerList.add(new Offer(name,brand,price,description,article));
         }
 
-
+        //For testing
         System.out.println(offerList.size());
+
         //Create new object for correct saving to XML
         AllOffers allOffers = new AllOffers("Offers",offerList);
+
         //Method that save Offers to XML
         convertObjectToXml(allOffers,fileName);
     }
 
+    // Method that search offer by keywords and does parsing
     public void parseByName() throws IOException {
+
+        List<String> sportsLinks = new ArrayList<String>();
+
         List<String> allLinks = new ArrayList<String>();
+
+        List<String> underLinkSports = new ArrayList<String>();
+
+        //Block for input name of product
+        System.out.println("Input name for search");
+        Scanner scanner = new Scanner(System.in);
+        String search = scanner.nextLine();
+
         String mainLink = "https://www.aboutyou.de";
 
-        Document documentFrauen = Jsoup.connect("https://www.aboutyou.de/frauen").get();
-        Elements elements = documentFrauen.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
-        for (Element element : elements) {
-            String a = element.attr("href");
-            allLinks.add(mainLink.concat(a));
-        }
-
-        Document documentMan = Jsoup.connect("https://www.aboutyou.de/maenner").get();
-        Elements elementsMan = documentMan.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
-        for (Element element : elementsMan) {
-            String a = element.attr("href");
-            allLinks.add(mainLink.concat(a));
-        }
-
-        Document documentKids = Jsoup.connect("https://www.aboutyou.de/kinder").get();
-        Elements elementsKids = documentKids.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
-        for (Element element : elementsKids) {
-            String a = element.attr("href");
-            allLinks.add(mainLink.concat(a));
-        }
-
+        //Block for parsing products for woman
         try {
-            System.out.println("Input name for search");
-            Scanner scanner = new Scanner(System.in);
-            String search = scanner.nextLine();
+            Document documentFrauen = Jsoup.connect("https://www.aboutyou.de/frauen/").get();
+            Elements elements = documentFrauen.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
+            for (Element element : elements) {
+                String a = element.attr("href");
+                allLinks.add(mainLink.concat(a));
+            }
+        }catch (SocketTimeoutException e) {
+        }
+
+        //Block for parsing products for man
+        try {
+            Document documentMan = Jsoup.connect("https://www.aboutyou.de/maenner/").get();
+            Elements elementsMan = documentMan.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
+            for (Element element : elementsMan) {
+                String a = element.attr("href");
+                allLinks.add(mainLink.concat(a));
+            }
+        }catch (SocketTimeoutException e) {
+        }
+
+        //Block for parsing products for kids
+        try {
+            Document documentKinder = Jsoup.connect("https://www.aboutyou.de/kinder").get();
+            Elements elementsKinder = documentKinder.select("div[class = sidebar-navigation js-sidebar-navigation-scroll-area] ul[class = list-unstyled js-category-tree-kids js-gender-tree-138113] li[class = category-item] a");
+            for (Element element : elementsKinder) {
+                String a = element.attr("href");
+                allLinks.add(mainLink.concat(a));
+            }
+        }catch (SocketTimeoutException e){
+
+        }
+
+        //Sport parsing woman
+        try {
+            Document documentSport = Jsoup.connect("https://www.aboutyou.de/frauen/sport").get();
+            Elements elementsSport = documentSport.select("div[class = sidebar-navigation js-sidebar-navigation-scroll-area] ul[class = list-unstyled] li[class = category-item] a");
+            for (Element element : elementsSport) {
+                String a = element.attr("href");
+                sportsLinks.add(a);
+            }
+            for (String sportsLink : sportsLinks) {
+                String urlSport = mainLink.concat(sportsLink);
+                Document documentSportCategory = Jsoup.connect(urlSport).get();
+                Elements elementsSportCategory = documentSportCategory.select("div[class = js-category-accordion-toggle-content is-collapsed] ul[class = list-unstyled] li[class = category-item] a");
+                for (Element element : elementsSportCategory) {
+                    String a = element.attr("href");
+                    underLinkSports.add(a);
+                }
+            }
+            for (String underLinkSport : underLinkSports) {
+                String urlSport = mainLink.concat(underLinkSport);
+                Document documentSportCategory = Jsoup.connect(urlSport).get();
+                Elements elementsSportCategory = documentSportCategory.select("div[class = js-category-accordion-toggle-content is-collapsed] ul[class = list-unstyled] li[class = category-item] a");
+                for (Element element : elementsSportCategory) {
+                    String a = element.attr("href");
+                    allLinks.add(mainLink.concat(a));
+                }
+            }
+        }catch (SocketTimeoutException e){
+        }
+
+
+        //Sport parsing Man
+        try {
+            Document documentSport = Jsoup.connect("https://www.aboutyou.de/maenner/sport").get();
+            Elements elementsSport = documentSport.select("div[class = sidebar-navigation js-sidebar-navigation-scroll-area] ul[class = list-unstyled] li[class = category-item] a");
+            for (Element element : elementsSport) {
+                String a = element.attr("href");
+                sportsLinks.add(a);
+            }
+            for (String sportsLink : sportsLinks) {
+                String urlSport = mainLink.concat(sportsLink);
+                Document documentSportCategory = Jsoup.connect(urlSport).get();
+                Elements elementsSportCategory = documentSportCategory.select("div[class = js-category-accordion-toggle-content is-collapsed] ul[class = list-unstyled] li[class = category-item] a");
+                for (Element element : elementsSportCategory) {
+                    String a = element.attr("href");
+                    underLinkSports.add(a);
+                }
+            }
+            for (String underLinkSport : underLinkSports) {
+                String urlSport = mainLink.concat(underLinkSport);
+                Document documentSportCategory = Jsoup.connect(urlSport).get();
+                Elements elementsSportCategory = documentSportCategory.select("div[class = js-category-accordion-toggle-content is-collapsed] ul[class = list-unstyled] li[class = category-item] a");
+                for (Element element : elementsSportCategory) {
+                    String a = element.attr("href");
+                    allLinks.add(mainLink.concat(a));
+                }
+            }
+        }catch (SocketTimeoutException e){
+        }
+
+
+        for (String allLink : allLinks) {
+            System.out.println(allLink);
+        }
+        try {
+
             for (String allLink : allLinks) {
                 Document document = Jsoup.connect(allLink).get();
                 parseSearchedElement(allLink,search,document);
@@ -161,14 +260,16 @@ public class ParsingService {
         } catch (NumberFormatException e){
 
         }
+
+
     }
 
     public void parseSearchedElement(String url,String search, Document documentToParse) throws IOException {
 
-        List<Offer> offerList = new ArrayList<Offer>();
         List<String> names = new ArrayList<String>();
-        List<String> linkList = new ArrayList<String>();
-        String searchedUrl = "";
+
+        HashSet<String> linkList = new HashSet<String>();
+
         String mainUrl = "https://www.aboutyou.de";
 
         for (int i = 1; i <= getPagesNumber(documentToParse); i++) {
@@ -180,47 +281,39 @@ public class ParsingService {
                     String link = element.attr("href");
                     linkList.add(link);
                     names.add(name);
-                    //searchedUrl = link;
                 }
             }
         }
 
         for (String s : linkList) {
-            System.out.println(s);
-            searchedUrl=s;
+            String searchedUrl=s;
             String fullUrl = mainUrl.concat(searchedUrl);
             parseOneElement(fullUrl);
         }
-        //System.out.println(searchedUrl);
-       // System.out.println(fullUrl);
-        //parseOneElement(fullUrl);
      }
 
 
+    List<Offer> offerList = new ArrayList<Offer>();
 
-public  static List<Offer> offerList = new ArrayList<Offer>();
-    public static void parseOneElement(String url) throws IOException {
-        //Create list with products
+    public void parseOneElement(String url) throws IOException {
+
+        //For testing
         System.out.println("For parsing = " + url);
-        //Create list with  links to product
-        List<String> linkList = new ArrayList<String>();
-        //Create list with links to each product
+
         String fileName = "Offers.xml";
+
         Document document = Jsoup.connect(url).get();
         Elements elements = document.select("div[class = content_1jug6qr]");
         String name = parseName(elements);String price = parsePrice(elements);
         String brand = parseBrand(elements);
         String description = parseDescription(elements);
         String article = parseArticle(elements);
-        //add product to offerList
         offerList.add(new Offer(name, brand, price, description, article));
 
-        System.out.println(offerList.size());
         //Create new object for correct saving to XML
-
         AllOffers allOffers = new AllOffers("Offers",offerList);
-        //Method that save Offers to XML
 
+        //Method that save Offers to XML
         convertObjectToXml(allOffers,fileName);
     }
 
@@ -305,6 +398,12 @@ public  static List<Offer> offerList = new ArrayList<Offer>();
         } catch (JAXBException e) {
             e.printStackTrace();
         }
+    }
+
+    public void getAmount(){
+
+        System.out.println("Amount of extracted products = " + offerList.size() );
+
     }
 
 }
