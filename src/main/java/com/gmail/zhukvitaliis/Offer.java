@@ -6,9 +6,8 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * Created by VitaliiZhuk on 02.11.2017.
  */
-// определяем корневой элемент
+
 @XmlRootElement(name = "Offer")
-// определяем последовательность тегов в XML
 @XmlType(propOrder = {"name", "brand", "price","description","article"})
 public class Offer {
     private String name;

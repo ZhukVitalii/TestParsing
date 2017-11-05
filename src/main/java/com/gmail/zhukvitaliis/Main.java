@@ -5,76 +5,124 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import java.io.File;
+
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * Created by VitaliiZhuk on 01.11.2017.
  */
-public class Main implements Runnable {
-    public static void main(String[] args) throws IOException {
-
-        List<Offer> offerList = new ArrayList<Offer>();
-        List<String> linkList = new ArrayList<String>();
-        Service service = new Service();
-
-        for (int i = 1; i <= 2; i++) {
-            Document document = Jsoup.connect("https://www.aboutyou.de/frauen/schuhe?page="+i).get();
-            Elements links = document.select("a[class = product-name-link]");
-            for (Element link : links) {
-            String linkOne = link.attr("href");
-            linkList.add(linkOne);
-            }
-        }
-            String fileName = "E:/offers.xml";
+public class Main {
+    public static void main(String[] args) throws IOException, SocketTimeoutException {
 
 
-                for (String s : linkList) {
-                    Elements elements = service.parcePage(s).select("div[class = content_1jug6qr]");
-                    String name = service.parseName(elements);
-                    String price = service.parsePrice(elements);
-                    String brand = service.parseBrand(elements);
-                    String description = service.parseDescription(elements);
-                    String article = service.parseArticle(elements);
-                    offerList.add(new Offer(name,brand,price,description,article));
-                }
+        ParsingService parsingService = new ParsingService();
 
-
-        System.out.println(offerList.size());
-        AllOffers allOffers = new AllOffers("Offers",offerList);
-
-        convertObjectToXml(allOffers,fileName);
-        }
-
-            // System.out.println(offerList);
-
-
-        private static void convertObjectToXml (AllOffers allOffers, String filePath){
-
-
+        //It is Block to parse by name
         try {
-                JAXBContext context = JAXBContext.newInstance(AllOffers.class);
-                Marshaller marshaller = context.createMarshaller();
-                // устанавливаем флаг для читабельного вывода XML в JAXB
-                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            parsingService.parseByName();
+        }catch (SocketTimeoutException e){
 
-                // маршаллинг объекта в файл
-                marshaller.marshal(allOffers, new File(filePath));
-            } catch (JAXBException e) {
-                e.printStackTrace();
-            }
+        }
+
+
+        //It is Block to parse category
+        //try {
+        /*
+        * parsingService.parseAccessoiresFrauen();
+        *parsingService.parseAccessoiresMaenner();
+        *parsingService.parseBekleidungFrauen();
+        *parsingService.parseBekleidungMaenner();
+        *parsingService.parseSchuheFrauen();
+        *parsingService.parseSchuheMaenner();
+        */
+        /*
+        parsingService.parseBekleidungFrauen();
+        } catch (SocketTimeoutException e){
+            return;
+        }
+        */
+
+        //Test block for all elements
+        /*
+        List<String> womanLinks = new ArrayList<String>();
+        List<String> manLinks = new ArrayList<String>();
+        List<String> kidsLinks = new ArrayList<String>();
+        String url = "https://www.aboutyou.de";
+        Document document = Jsoup.connect(url).get();
+        List<String> linksGender = new ArrayList<String>();
+        Elements elements = document.select("div[class = genderMenu_sf14ck] a");
+        for (Element element : elements) {
+            String a = element.attr("href");
+            linksGender.add(a);
+        }
+        for (String s : linksGender) {
+            System.out.println(s);
+        }
+       try {
+           for (int i = 0; i <= linksGender.size(); i++) {
+               String b = url + linksGender.get(i);
+               System.out.println(b);
+           }
+       } catch (IndexOutOfBoundsException e){
+
+       }
+
+        String women = "https://www.aboutyou.de/frauen";
+        String man = "https://www.aboutyou.de/maenner";
+        String kids = "https://www.aboutyou.de/kinder";
+
+        Document womens =  Jsoup.connect("https://www.aboutyou.de/frauen").get();
+        Elements linkWomen = womens.select("div[class = container subWrapper_j428gh] ul li a");
+        for (Element elementWoman : linkWomen) {
+            String link = elementWoman.absUrl("href");
+            String a = elementWoman.text();
+            if (a.equals("Bekleidung") || a.equals("Wäsche") || a.equals("Schuhe") || a.equals("Accessoires")
+                    || a.equals("SALE"))
+            womanLinks.add(link);
+        }
+        for (String s : womanLinks) {
+            System.out.println(s);
+        }
+        Document mens =  Jsoup.connect("https://www.aboutyou.de/maenner").get();
+        Elements linkMen = mens.select("div[class = container subWrapper_j428gh] ul li a");
+        for (Element elementMan : linkMen) {
+            String link = elementMan.absUrl("href");
+            String a = elementMan.text();
+            if (a.equals("Bekleidung") || a.equals("Wäsche") || a.equals("Schuhe") || a.equals("Accessoires")
+                    || a.equals("SALE"))
+                manLinks.add(link);
+        }
+
+        for (String s : manLinks) {
+            System.out.println(s);
+        }
+
+        Document kinder =  Jsoup.connect("https://www.aboutyou.de/kinder").get();
+        Elements linkKids = kinder.select("div[class = container subWrapper_j428gh] ul li a");
+        for (Element elementKids : linkKids) {
+            String link = elementKids.absUrl("href");
+            String a = elementKids.text();
+            if (a.equals("Bekleidung") || a.equals("Wäsche") || a.equals("Schuhe") || a.equals("Accessoires")
+                    || a.equals("SALE"))
+                kidsLinks.add(link);
+        }
+
+        for (String s : kidsLinks) {
+            System.out.println(s);
+        }
+
+*/
+
+
+
+
+
     }
-
-        public void run () {
-
-        }
-
-        }
+}
 
 
 
