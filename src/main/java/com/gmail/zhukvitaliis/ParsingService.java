@@ -143,7 +143,7 @@ public class ParsingService {
 
         List<String> sportsLinks = new ArrayList<String>();
 
-        List<String> allLinks = new ArrayList<String>();
+       List<String> allLinks = new ArrayList<String>();
 
         List<String> underLinkSports = new ArrayList<String>();
 
@@ -153,21 +153,9 @@ public class ParsingService {
         String search = scanner.nextLine();
 
         String mainLink = "https://www.aboutyou.de";
-
-        //Block for parsing products for woman
-        try {
-            Document documentFrauen = Jsoup.connect("https://www.aboutyou.de/frauen/").get();
-            Elements elements = documentFrauen.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
-            for (Element element : elements) {
-                String a = element.attr("href");
-                allLinks.add(mainLink.concat(a));
-            }
-        }catch (SocketTimeoutException e) {
-        }
-
         //Block for parsing products for man
         try {
-            Document documentMan = Jsoup.connect("https://www.aboutyou.de/maenner/").get();
+            Document documentMan = Jsoup.connect("https://www.aboutyou.de/maenner?page=1").get();
             Elements elementsMan = documentMan.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
             for (Element element : elementsMan) {
                 String a = element.attr("href");
@@ -186,6 +174,17 @@ public class ParsingService {
             }
         }catch (SocketTimeoutException e){
 
+        }
+
+        //Block for parsing products for woman
+        try {
+            Document documentFrauen = Jsoup.connect("https://www.aboutyou.de/frauen/").get();
+            Elements elements = documentFrauen.select("div[class = container subWrapper_j428gh] li[class = categoryTreeItem item_5emc65] a");
+            for (Element element : elements) {
+                String a = element.attr("href");
+                allLinks.add(mainLink.concat(a));
+            }
+        }catch (SocketTimeoutException e) {
         }
 
         //Sport parsing woman
